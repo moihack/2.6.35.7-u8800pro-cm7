@@ -1,3 +1,5 @@
+// Modified by stockwell and Kimmo Satta (ksatta)
+
 /* Copyright (c) 2008-2011, Code Aurora Forum. All rights reserved.
  *
  * All source code in this file is licensed under the following license except
@@ -53,6 +55,14 @@ char snddev_name[AUDIO_DEV_CTL_MAX_DEV][44];
 						      more deviation */
 static int device_index; /* Count of Device controls */
 static int simple_control; /* Count of simple controls*/
+
+static int headset_mic_switch = 0; // use phone's mic by default
+static int sound_logging = 0;
+// static int speakerphone_echo_fix = 1; // fix enabled by default
+
+module_param(headset_mic_switch,int,00644);
+module_param(sound_logging,int,00644);
+// module_param(speakerphone_echo_fix,int,00644); probably not needed for official 2.3
 
 static int msm_scontrol_count_info(struct snd_kcontrol *kcontrol,
 				struct snd_ctl_elem_info *uinfo)
@@ -198,7 +208,6 @@ static int msm_volume_put(struct snd_kcontrol *kcontrol,
 	/* Only Decoder volume control supported */
 	session_mask = (0x1 << (session_id) << (8 * ((int)AUDDEV_CLNT_DEC-1)));
 	msm_vol_ctl.volume = volume;
-	MM_DBG("session_id %d, volume %d", session_id, volume);
 	broadcast_event(AUDDEV_EVT_STREAM_VOL_CHG, DEVICE_IGNORE,
 							session_mask);
 
@@ -244,9 +253,6 @@ static int msm_voice_put(struct snd_kcontrol *kcontrol,
 		return -EFAULT;
 	}
 
-	MM_DBG("route cfg %d STREAM_VOICE_RX type\n",
-		rx_dev_id);
-
 	msm_set_voc_route(rx_dev_info, AUDIO_ROUTE_STREAM_VOICE_RX,
 				rx_dev_id);
 
@@ -257,8 +263,21 @@ static int msm_voice_put(struct snd_kcontrol *kcontrol,
 
 	/* Tx Device Routing */
 	tx_dev_id = ucontrol->value.integer.value[1];
+  
+	if (sound_logging)
+	  pr_info("sound_logging: msm_voice_put() tx_dev_id:%Lu rx_dev_id:%Lu \n", (long long unsigned int) tx_dev_id, (long long unsigned int) rx_dev_id);
+	
+	// replace headset mic with speakerphone mic
+	if (headset_mic_switch && tx_dev_id == 3)
+	  tx_dev_id = 12;
+	
+	// replace speaker_dual_mic_broadside_tx dev_id:12 with speaker_mono_tx (10)
+	/*if (speakerphone_echo_fix && tx_dev_id == 12)
+	  tx_dev_id = 10;*/ // probably not needed in official 2.3
+	
 	tx_dev_info = audio_dev_ctrl_find_dev(tx_dev_id);
 
+	
 	if (IS_ERR(tx_dev_info)) {
 		MM_ERR("pass invalid dev_id\n");
 		rc = PTR_ERR(tx_dev_info);
@@ -269,9 +288,6 @@ static int msm_voice_put(struct snd_kcontrol *kcontrol,
 		MM_ERR("Second Dev is supposed to be Tx\n");
 		return -EFAULT;
 	}
-
-	MM_DBG("route cfg %d %d type\n",
-		tx_dev_id, AUDIO_ROUTE_STREAM_VOICE_TX);
 
 	msm_set_voc_route(tx_dev_info, AUDIO_ROUTE_STREAM_VOICE_TX,
 				tx_dev_id);
@@ -319,14 +335,25 @@ static int msm_device_put(struct snd_kcontrol *kcontrol,
 
 	set = ucontrol->value.integer.value[0];
 	route_cfg.dev_id = ucontrol->id.numid - device_index;
+	
+	if (sound_logging)
+	  pr_info("sound_logging: msm_device_put() route_cfg.dev_id:%d enable:%d \n", route_cfg.dev_id, set);
+	
+	// replace headset mic (3) with speaker phone mic (12)
+	if (headset_mic_switch && route_cfg.dev_id == 3)
+	  route_cfg.dev_id=12;
+	
+	// replace speaker_dual_mic_broadside_tx dev_id:12 with speaker_mono_tx (10)
+	/*if (speakerphone_echo_fix && route_cfg.dev_id==12)
+	  route_cfg.dev_id=10; // probably not needed by official 2.3*/
+		
 	dev_info = audio_dev_ctrl_find_dev(route_cfg.dev_id);
 	if (IS_ERR(dev_info)) {
 		MM_ERR("pass invalid dev_id\n");
 		rc = PTR_ERR(dev_info);
 		return rc;
 	}
-	MM_INFO("device %s set %d\n", dev_info->name, set);
-
+	
 	if (set) {
 		if (!dev_info->opened) {
 			set_freq = dev_info->sample_rate;
@@ -441,8 +468,6 @@ static int msm_route_put(struct snd_kcontrol *kcontrol,
 	else
 		route_cfg.stream_type =	AUDIO_ROUTE_STREAM_REC;
 
-	MM_DBG("route cfg %d %d type for popp %d set value %d\n",
-		route_cfg.dev_id, route_cfg.stream_type, session_id, set);
 	dev_info = audio_dev_ctrl_find_dev(route_cfg.dev_id);
 
 	if (IS_ERR(dev_info)) {
@@ -496,11 +521,7 @@ static int msm_route_put(struct snd_kcontrol *kcontrol,
 						session_id,
 						SNDDEV_CAP_TX,
 						AUDDEV_CLNT_ENC);
-				MM_DBG("sample rate configured %d"
-					"sample rate requested %d\n",
-					enc_freq, requested_freq);
 				if ((rc <= 0) || (enc_freq != requested_freq)) {
-					MM_DBG("msm_snddev_withdraw_freq\n");
 					rc = msm_snddev_withdraw_freq
 						(session_id,
 						SNDDEV_CAP_TX, AUDDEV_CLNT_ENC);
@@ -561,19 +582,14 @@ static int msm_device_volume_put(struct snd_kcontrol *kcontrol,
 	int dev_id = ucontrol->value.integer.value[0];
 	int volume = ucontrol->value.integer.value[1];
 
-	MM_DBG("dev_id = %d, volume = %d\n", dev_id, volume);
-
 	dev_info = audio_dev_ctrl_find_dev(dev_id);
 
 	if (IS_ERR(dev_info)) {
 		rc = PTR_ERR(dev_info);
-		MM_ERR("audio_dev_ctrl_find_dev failed. %ld\n",
+		MM_ERR("audio_dev_ctrl_find_dev failed. %ld \n",
 				PTR_ERR(dev_info));
 		return rc;
 	}
-
-	MM_DBG("dev_name = %s dev_id = %d, volume = %d\n",
-				dev_info->name, dev_id, volume);
 
 	if (dev_info->dev_ops.set_device_volume)
 		rc = dev_info->dev_ops.set_device_volume(dev_info, volume);
