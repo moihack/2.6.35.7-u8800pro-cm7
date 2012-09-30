@@ -127,10 +127,10 @@ static struct snddev_icodec_data snddev_iearpiece_data_u8800 = {
 	.pamp_on = NULL,
 	.pamp_off = NULL,
 	.property = SIDE_TONE_MASK,
-	.max_voice_rx_vol[VOC_NB_INDEX] = -700,
-	.min_voice_rx_vol[VOC_NB_INDEX] = -2200,
-	.max_voice_rx_vol[VOC_WB_INDEX] = -700,
-	.min_voice_rx_vol[VOC_WB_INDEX] = -2200
+	.max_voice_rx_vol[VOC_NB_INDEX] = 1000,
+	.min_voice_rx_vol[VOC_NB_INDEX] = -1000,
+	.max_voice_rx_vol[VOC_WB_INDEX] = 1000,
+	.min_voice_rx_vol[VOC_WB_INDEX] = -1000
 };
 
 static struct platform_device msm_iearpiece_device_u8800 = {
@@ -639,10 +639,10 @@ static struct snddev_icodec_data snddev_ihs_stereo_rx_data_u8800 = {
 	.default_sample_rate = 48000,
 	.pamp_on = msm_snddev_hsed_voltage_on,
 	.pamp_off = msm_snddev_hsed_voltage_off,
-	.max_voice_rx_vol[VOC_NB_INDEX] = -300, 
-	.min_voice_rx_vol[VOC_NB_INDEX] = -1800, 
-	.max_voice_rx_vol[VOC_WB_INDEX] = -500, 
-	.min_voice_rx_vol[VOC_WB_INDEX] = -2000 
+	.max_voice_rx_vol[VOC_NB_INDEX] = -500, 
+	.min_voice_rx_vol[VOC_NB_INDEX] = -2000, 
+	.max_voice_rx_vol[VOC_WB_INDEX] = -700, 
+	.min_voice_rx_vol[VOC_WB_INDEX] = -2200 
 };
 
 static struct platform_device msm_ihs_stereo_rx_device_u8800 = {
@@ -1414,7 +1414,7 @@ static struct snddev_icodec_data snddev_ispeaker_rx_data_u8800 = {
 	.capability = (SNDDEV_CAP_RX | SNDDEV_CAP_VOICE),
 	.name = "speaker_stereo_rx",
 	.copp_id = 0,
-	.acdb_id = ACDB_ID_SPKR_PHONE_MONO, //7,
+	.acdb_id = ACDB_ID_SPKR_PHONE_MUSIC_MONO, //7, //ACDB_ID_SPKR_PHONE_MONO, //7,
 	.profile = &ispeaker_rx_profile_u8800,
 	.channel_mode = 1,//single channel for u8800
 	.pmctl_id = NULL,
@@ -1422,10 +1422,10 @@ static struct snddev_icodec_data snddev_ispeaker_rx_data_u8800 = {
 	.default_sample_rate = 48000,
 	.pamp_on = &msm_snddev_poweramp_on,
 	.pamp_off = &msm_snddev_poweramp_off,
-	.max_voice_rx_vol[VOC_NB_INDEX] = 200, 
-	.min_voice_rx_vol[VOC_NB_INDEX] = -1300, 
-	.max_voice_rx_vol[VOC_WB_INDEX] = 200, 
-	.min_voice_rx_vol[VOC_WB_INDEX] = -1300  
+	.max_voice_rx_vol[VOC_NB_INDEX] = 0, 
+	.min_voice_rx_vol[VOC_NB_INDEX] = -1500, 
+	.max_voice_rx_vol[VOC_WB_INDEX] = 0, 
+	.min_voice_rx_vol[VOC_WB_INDEX] = -1500  
 };
 
 static struct platform_device msm_ispeaker_rx_device_u8800 = {
