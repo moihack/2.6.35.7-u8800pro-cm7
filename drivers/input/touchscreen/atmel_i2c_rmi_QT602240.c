@@ -114,6 +114,11 @@ and the height of the key region is 8.5mm, TS_Y_MAX * 8.5 /91.5 */
 #define EXTRA_MAX_TOUCH_KEY    4
 #define TS_KEY_DEBOUNCE_TIMER_MS 60
 
+static int vibrate=30;
+
+module_param(vibrate, int, 00644);
+
+void msm_timed_vibrate(int);
 
 /* to define a region of touch panel */
 typedef struct
@@ -905,8 +910,8 @@ int write_acquisition_config(u8 instance,int flag)
     {
         /* < DTS2011062404739 cuiyu 20110624 begin */	
         /* shut down calibration */
-    	*(tmp + 6) = 0; //0x0a//ATCHCALST
-    	*(tmp + 7) = 1; //0x0f//ATCHCALSTHR
+    	*(tmp + 6) = 5; //0x0a//ATCHCALST
+    	*(tmp + 7) = 40; //0x0f//ATCHCALSTHR
         /* DTS2011062404739 cuiyu 20110624 end > */
 /*<BU5D09283 luojianhong 20100506 end*/
     }
@@ -1040,7 +1045,7 @@ int write_multitouchscreen_config(u8 instance,int flag)
     {
         /* < DTS2011062404739 cuiyu 20110624 begin */
         /* effect atch vaule */
-    	*(tmp + 7) = 20; //0x1d; //tchthr
+    	*(tmp + 7) = 50; //0x1d; //tchthr
         /* DTS2011062404739 cuiyu 20110624 end > */
     }
     else
@@ -1056,7 +1061,7 @@ int write_multitouchscreen_config(u8 instance,int flag)
 	*(tmp + 11) = 3; //movhysti
 	/* < DTS2011042106137 zhangtao 20110509 begin */
 	/*  make the point report every pix */
-	*(tmp + 12) = 1; //movhystn
+	*(tmp + 12) = 3; //movhystn
 	/* DTS2011042106137 zhangtao 20110509 end > */
 	*(tmp + 13) = 0;//0x2e; //movfilter
 	*(tmp + 14) = 2; //numtouch
@@ -1191,7 +1196,7 @@ int write_gripfacesuppression_config(u8 instance)
 /* < DTS2010083103149 zhangtao 20100909 begin */
 	/* < DTS2011042106137 zhangtao 20110509 begin */
 	/* turn off the fripfacesuppression */
-	*(tmp + 0) = 0x00; //0x05; //ctrl
+	*(tmp + 0) = 0x07; //0x05; //ctrl
 	/* DTS2011042106137 zhangtao 20110509 end > */
 /* < DTS2010073101113 zhangtao 20100819 begin */
 	*(tmp + 1) = 0; //xlogrip
@@ -1201,7 +1206,7 @@ int write_gripfacesuppression_config(u8 instance)
 	*(tmp + 5) = 0; //maxtchs
 	*(tmp + 6) = 0; //reserved
 	*(tmp + 7) = 80; //szthr1
-	*(tmp + 8) = 40; //szthr2
+	*(tmp + 8) = 20; //szthr2
 	*(tmp + 9) = 4; //shpthr1
 	*(tmp + 10) = 35; //shpthr2
 	*(tmp + 11) = 10; //supextto
@@ -2372,6 +2377,7 @@ static void atmel_ts_work_func(struct work_struct *work)
                 			{
                                 input_report_key(ts->key_input, key_tmp, 1);
                                 key_pressed1 = 1;
+                                msm_timed_vibrate(vibrate);
                                 ATMEL_DBG_MASK("the key is pressed report!\n");
                 			}
                 		}    
@@ -2423,6 +2429,7 @@ static void atmel_ts_work_func(struct work_struct *work)
 							key_pressed = KEY_SEARCH;							
 					 	touch_input_report_key(ts, key_pressed, 1);
 						input_sync(ts->input_dev);
+						msm_timed_vibrate(vibrate);
 					}
 					break;
 				case KEY_NUHBER2:
@@ -2434,6 +2441,7 @@ static void atmel_ts_work_func(struct work_struct *work)
 							key_pressed = KEY_MENU;
 					 	touch_input_report_key(ts, key_pressed, 1);
 						input_sync(ts->input_dev);
+						msm_timed_vibrate(vibrate);
 					}
 					break;
 				case KEY_NUHBER3:
@@ -2445,6 +2453,7 @@ static void atmel_ts_work_func(struct work_struct *work)
 							key_pressed = KEY_HOME;
 					 	touch_input_report_key(ts, key_pressed, 1);
 						input_sync(ts->input_dev);
+						msm_timed_vibrate(vibrate);
 					}
 					break;
 				case KEY_NUHBER4:
@@ -2456,6 +2465,7 @@ static void atmel_ts_work_func(struct work_struct *work)
 							key_pressed = KEY_BACK;
 					 	touch_input_report_key(ts, key_pressed, 1);
 						input_sync(ts->input_dev);
+						msm_timed_vibrate(vibrate);
 					}
 					break;
 				default:
