@@ -114,7 +114,7 @@ and the height of the key region is 8.5mm, TS_Y_MAX * 8.5 /91.5 */
 #define EXTRA_MAX_TOUCH_KEY    4
 #define TS_KEY_DEBOUNCE_TIMER_MS 60
 
-static int vibrate=30;
+static int vibrate=0;
 
 module_param(vibrate, int, 00644);
 
